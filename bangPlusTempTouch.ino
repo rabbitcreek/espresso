@@ -1,12 +1,14 @@
 #include <TFT_eSPI.h> 
 #include "lv_xiao_round_screen.h"
 #include "gauge5.h"
+#include "battGauge.h"
 #define USE_TFT_ESPI_LIBRARY
 #include "font.h"
 #include "Adafruit_MCP9601.h"
-
+#define BATTERY_DEFICIT_VOL 1850    // Battery voltage value at loss of charge
+#define BATTERY_FULL_VOL 2057  
 #define I2C_ADDRESS (0x67)
-
+float mvolts;
 Adafruit_MCP9601 mcp;
 //TFT_eSPI tft = TFT_eSPI(); 
 TFT_eSprite img = TFT_eSprite(&tft);
@@ -112,7 +114,24 @@ int result=0;
 
 void loop() {
   if(chsc6x_is_pressed()){
+    mvolts = 0;
     Serial.println("The display is touched.");
+    for(int8_t i=0; i<20; i++){
+    mvolts += analogReadMilliVolts(D0);
+  }
+  mvolts /= 20;
+  Serial.print("millivolts: ");
+  Serial.println(mvolts);
+  int32_t level = (mvolts - BATTERY_DEFICIT_VOL) * 100 / (BATTERY_FULL_VOL-BATTERY_DEFICIT_VOL);
+  Serial.print("Level:  ");
+  Serial.print(level);
+  level = map(level,100,0,0,240);
+  img.pushImage(0,0,240,240,battGauge);
+  img.fillRect(115,0,10,250, TFT_RED);
+  img.fillRect(115,0,10,level, TFT_BLACK);
+  
+  img.pushSprite(0, 0);
+  delay(5000);
   }
 float temp = mcp.readThermocouple();
 temp = temp * 1.8 + 32;
@@ -124,7 +143,8 @@ Serial.println( temp );
 
   delay(500);
   chosenOne = 0;
-  result=map(temp,70,200,0,267);
+  temp = constrain(temp, 65, 210);
+  result=map(temp,65,210,0,267);
   //angle=map(result,minValue[chosenOne],maxValue[chosenOne],0,267);
   angle = result;
 
