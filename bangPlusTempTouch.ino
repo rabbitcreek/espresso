@@ -5,6 +5,7 @@
 #include "battGauge.h"
 #include "coffeeCup.h"
 #include "hotCoffee.h"
+#include "newCoffee.h"
 #define USE_TFT_ESPI_LIBRARY
 #include "font.h"
 #include "Adafruit_MCP9601.h"
@@ -114,7 +115,11 @@ int result=0;
 
 void loop() {
   if(chsc6x_is_pressed()){
-touchy();
+    chsc6x_get_xy(&touchX, &touchY);
+     if(abs( touchX - 120 ) < 20 && (touchY < 30)){
+      batt();
+     }
+ else {touchy();}
    }
 float temp = mcp.readThermocouple();
 temp = temp * 1.8 + 32;
@@ -129,7 +134,7 @@ Serial.println( temp );
   angle = result;
 if(tempLimit <= temp){
   img.pushImage(0,0,240,240,coffeeReady);
-} else  img.pushImage(0,0,240,240,gauge5);
+} else  img.pushImage(0,0,240,240,newCoffee);
 
  
  
@@ -142,28 +147,23 @@ if(tempLimit <= temp){
  a2=angle+4-359;
 int tempNot = temp;
  for (uint16_t a=0; a<7; a++){
-img.drawLine(123,125+a,x[angle],y[angle]+a,TFT_RED);}
+img.drawLine(123,119+a,x[angle],y[angle]+a,TFT_RED);}
 img.drawString(String(tempNot),120,150);
 img.pushSprite(0, 0);
 }
 void touchy(){
   img.pushImage(0,0,240,240,coffeeCup);
   img.pushSprite(0,0);
-  delay(2000);
+  delay(1000);
   tft.fillScreen(TFT_BROWN);
   
-  tft.fillCircle(120, 20, 20, TFT_RED);
+  //tft.fillCircle(120, 20, 20, TFT_RED);
 
    timeNow = millis();
  while(millis()-timeNow < 10000){
   chsc6x_get_xy(&touchX, &touchY);
     tft.fillCircle(touchX, touchY, 10, TFT_YELLOW);
-    if(abs( touchX - 120 ) < 20 && (touchY < 30)){
-      batt();
-     touchX = 0;
-     touchY = 0;
-      tft.fillScreen(TFT_BROWN);
-    }
+    
     
   
   
@@ -182,10 +182,10 @@ void batt(){
   int32_t level = (mvolts - BATTERY_DEFICIT_VOL) * 100 / (BATTERY_FULL_VOL-BATTERY_DEFICIT_VOL);
   Serial.print("Level:  ");
   Serial.print(level);
-  level = map(level,100,0,0,240);
+  level = map(level,100,0,0,90);
   img.pushImage(0,0,240,240,battGauge);
-  img.fillRect(115,0,10,250, TFT_RED);
-  img.fillRect(115,0,10,level, TFT_BLACK);
+  img.fillRect(70,100,90,40, TFT_RED);
+  img.fillRect(70,100,10,40, TFT_BLACK);
   
   img.pushSprite(0, 0);
   delay(2000);
