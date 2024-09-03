@@ -2,6 +2,8 @@
 #include "lv_xiao_round_screen.h"
 #include "gauge5.h"
 #include "battGauge.h"
+#include "coffeeCup.h"
+#include "hotCoffee.h"
 #define USE_TFT_ESPI_LIBRARY
 #include "font.h"
 #include "Adafruit_MCP9601.h"
@@ -13,7 +15,7 @@ Adafruit_MCP9601 mcp;
 //TFT_eSPI tft = TFT_eSPI(); 
 TFT_eSprite img = TFT_eSprite(&tft);
 TFT_eSprite ln = TFT_eSprite(&tft);
-
+int tempLimit = 90;
 double rad=0.01745;
 int angle;
 
@@ -138,25 +140,18 @@ temp = temp * 1.8 + 32;
 Serial.print("Farenheit Temp =    ");
 Serial.println( temp );
 
-
-
-
   delay(500);
   chosenOne = 0;
   temp = constrain(temp, 65, 210);
   result=map(temp,65,210,0,267);
   //angle=map(result,minValue[chosenOne],maxValue[chosenOne],0,267);
   angle = result;
-
-
- 
- img.pushImage(0,0,240,240,gauge5);
- 
+if(tempLimit <= temp){
+  img.pushImage(0,0,240,240,coffeeReady);
+} else  img.pushImage(0,0,240,240,gauge5);
 
  
-
- //img.drawString(String(analogRead(22)), 30,10,2);
-
+ 
  a1=angle-10;
  a2=angle+10;
 
@@ -164,16 +159,9 @@ Serial.println( temp );
  a1=angle-4+359;
   if(a2>=359)
  a2=angle+4-359;
-/*
- if(result<=minValue[chosenOne]+4)
- img.fillTriangle(x[angle],y[angle],x2[angle],y2[angle],x2[a2+2],y2[a2+2],TFT_RED);
- else if(result>=maxValue[chosenOne]-4)
- img.fillTriangle(x[angle],y[angle],x2[a1-2],y2[a1-2],x2[angle],y2[angle],TFT_RED);
- else
- img.fillTriangle(x[angle],y[angle],x2[a1],y2[a1],x2[a2],y2[a2],TFT_RED);
- */
+int tempNot = temp;
  for (uint16_t a=0; a<7; a++){
 img.drawLine(123,125+a,x[angle],y[angle]+a,TFT_RED);}
-  img.drawString(String(temp),120,150);
- img.pushSprite(0, 0);
+img.drawString(String(tempNot),120,150);
+img.pushSprite(0, 0);
 }
