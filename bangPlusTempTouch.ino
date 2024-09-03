@@ -1,5 +1,6 @@
-#include <TFT_eSPI.h> 
+#include <TFT_eSPI.h>
 #include "lv_xiao_round_screen.h"
+#include <SPI.h>
 #include "gauge5.h"
 #include "battGauge.h"
 #include "coffeeCup.h"
@@ -10,6 +11,7 @@
 #define BATTERY_DEFICIT_VOL 1850    // Battery voltage value at loss of charge
 #define BATTERY_FULL_VOL 2057  
 #define I2C_ADDRESS (0x67)
+long timeNow;
 float mvolts;
 Adafruit_MCP9601 mcp;
 //TFT_eSPI tft = TFT_eSPI(); 
@@ -31,14 +33,11 @@ float y2[360];
 const int pwmFreq = 5000;
 const int pwmResolution = 8;
 const int pwmLedChannelTFT = 0;
-
-int chosenOne=0;
-int minValue[6]={0,20,0,0,0,80};
-int maxValue[6]={40,100,60,80,70,160};
-int dbounce=0;
+lv_coord_t touchX, touchY;
 
 void setup() {
-
+  pinMode(TOUCH_INT, INPUT_PULLUP);
+  //Wire.begin();
     ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
     ledcAttachPin(5, pwmLedChannelTFT);
     ledcWrite(pwmLedChannelTFT, 90);
@@ -104,8 +103,7 @@ void setup() {
   mcp.enable(true);
 
   Serial.println(F("------------------------------"));
- pinMode(TOUCH_INT, INPUT_PULLUP);
-  Wire.begin();
+  
 }
 
 //min angle 136 or 137
@@ -116,32 +114,15 @@ int result=0;
 
 void loop() {
   if(chsc6x_is_pressed()){
-    mvolts = 0;
-    Serial.println("The display is touched.");
-    for(int8_t i=0; i<20; i++){
-    mvolts += analogReadMilliVolts(D0);
-  }
-  mvolts /= 20;
-  Serial.print("millivolts: ");
-  Serial.println(mvolts);
-  int32_t level = (mvolts - BATTERY_DEFICIT_VOL) * 100 / (BATTERY_FULL_VOL-BATTERY_DEFICIT_VOL);
-  Serial.print("Level:  ");
-  Serial.print(level);
-  level = map(level,100,0,0,240);
-  img.pushImage(0,0,240,240,battGauge);
-  img.fillRect(115,0,10,250, TFT_RED);
-  img.fillRect(115,0,10,level, TFT_BLACK);
-  
-  img.pushSprite(0, 0);
-  delay(5000);
-  }
+touchy();
+   }
 float temp = mcp.readThermocouple();
 temp = temp * 1.8 + 32;
 Serial.print("Farenheit Temp =    ");
 Serial.println( temp );
 
   delay(500);
-  chosenOne = 0;
+  
   temp = constrain(temp, 65, 210);
   result=map(temp,65,210,0,267);
   //angle=map(result,minValue[chosenOne],maxValue[chosenOne],0,267);
@@ -164,4 +145,48 @@ int tempNot = temp;
 img.drawLine(123,125+a,x[angle],y[angle]+a,TFT_RED);}
 img.drawString(String(tempNot),120,150);
 img.pushSprite(0, 0);
+}
+void touchy(){
+  img.pushImage(0,0,240,240,coffeeCup);
+  img.pushSprite(0,0);
+  delay(2000);
+  tft.fillScreen(TFT_BROWN);
+  
+  tft.fillCircle(120, 20, 20, TFT_RED);
+
+   timeNow = millis();
+ while(millis()-timeNow < 10000){
+  chsc6x_get_xy(&touchX, &touchY);
+    tft.fillCircle(touchX, touchY, 10, TFT_YELLOW);
+    if(abs( touchX - 120 ) < 20 && (touchY < 30)){
+      batt();
+     touchX = 0;
+     touchY = 0;
+      tft.fillScreen(TFT_BROWN);
+    }
+    
+  
+  
+  delay(50);
+}
+}
+void batt(){
+ mvolts = 0;
+    Serial.println("The display is touched.");
+    for(int8_t i=0; i<20; i++){
+    mvolts += analogReadMilliVolts(D0);
+  }
+  mvolts /= 20;
+  Serial.print("millivolts: ");
+  Serial.println(mvolts);
+  int32_t level = (mvolts - BATTERY_DEFICIT_VOL) * 100 / (BATTERY_FULL_VOL-BATTERY_DEFICIT_VOL);
+  Serial.print("Level:  ");
+  Serial.print(level);
+  level = map(level,100,0,0,240);
+  img.pushImage(0,0,240,240,battGauge);
+  img.fillRect(115,0,10,250, TFT_RED);
+  img.fillRect(115,0,10,level, TFT_BLACK);
+  
+  img.pushSprite(0, 0);
+  delay(2000);
 }
