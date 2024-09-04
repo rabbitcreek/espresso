@@ -6,6 +6,7 @@
 #include "coffeeCup.h"
 #include "hotCoffee.h"
 #include "newCoffee.h"
+#include "off.h"
 #define USE_TFT_ESPI_LIBRARY
 #include "font.h"
 #include "Adafruit_MCP9601.h"
@@ -13,6 +14,7 @@
 #define BATTERY_FULL_VOL 2057  
 #define I2C_ADDRESS (0x67)
 long timeNow;
+long deepSleep;
 float mvolts;
 Adafruit_MCP9601 mcp;
 //TFT_eSPI tft = TFT_eSPI(); 
@@ -21,7 +23,7 @@ TFT_eSprite ln = TFT_eSprite(&tft);
 int tempLimit = 90;
 double rad=0.01745;
 int angle;
-
+int result=0;
 int sx=120;
 int sy=120;//Users/RobertW./Desktop/lv_xiao_round_screen.h
 int r=100;
@@ -57,7 +59,7 @@ void setup() {
   img.setTextDatum(4);
   img.setTextColor(TFT_GREEN,0x0000);
   img.setFreeFont(&Orbitron_Medium_28);
-
+  
   int i=0;
   int a=136;
 
@@ -104,19 +106,20 @@ void setup() {
   mcp.enable(true);
 
   Serial.println(F("------------------------------"));
-  
+  deepSleep = millis();
 }
 
-//min angle 136 or 137
-//max angle 43
 
-int a1,a2;
-int result=0;
+
+
 
 void loop() {
+  if((millis() - deepSleep) >= (10*60*1000)){
+    endGame();
+  }
   if(chsc6x_is_pressed()){
     chsc6x_get_xy(&touchX, &touchY);
-     if(abs( touchX - 120 ) < 20 && (touchY < 30)){
+     if(abs( touchX - 120 ) < 50 && (touchY < 50)){
       batt();
      }
  else {touchy();}
@@ -136,15 +139,6 @@ if(tempLimit <= temp){
   img.pushImage(0,0,240,240,coffeeReady);
 } else  img.pushImage(0,0,240,240,newCoffee);
 
- 
- 
- a1=angle-10;
- a2=angle+10;
-
- if(a1<0)
- a1=angle-4+359;
-  if(a2>=359)
- a2=angle+4-359;
 int tempNot = temp;
  for (uint16_t a=0; a<7; a++){
 img.drawLine(123,119+a,x[angle],y[angle]+a,TFT_RED);}
@@ -189,4 +183,9 @@ void batt(){
   
   img.pushSprite(0, 0);
   delay(2000);
+}
+void endGame(){
+  img.pushImage(0,0,240,240,off);
+  img.pushSprite(0, 0);
+  while(1);
 }
